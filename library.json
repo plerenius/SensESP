@@ -107,6 +107,9 @@
       "name": "Adafruit AHRS"
     },
     {
+      "name": "DHT Sensor Library"
+    },
+    {
       "name": "EspSoftwareSerial"
     },
     {

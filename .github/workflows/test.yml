@@ -13,6 +13,7 @@ jobs:
           examples/analog_input.cpp,
           examples/bme280_example.cpp,
           examples/bmp280_example.cpp,
+          examples/dhtxx_example.cpp,
           examples/fuel_flow_meter.cpp,
           examples/fuel_level_sensor/fuel_level_sensor_example.cpp,
           examples/gps_compass.cpp,
