@@ -62,18 +62,15 @@ ReactESP app([]() {
   SetupSerialDebug(115200);
 #endif
 
-  // Create the global SensESPApp() object. If you add the line ->set_wifi("your
-  // ssid", "your password") you can specify the wifi parameters in the builder.
-  // If you do not do that, the SensESP device wifi configuration hotspot will
-  // appear and you can use a web browser pointed to 192.168.4.1 to configure
-  // the wifi parameters. You can use NONE, UPTIME, FREQUENCY, FREE_MEMORY,
-  // WIFI_SIGNAL or ALL instead if IP_ADDRESS in set_standard_sensors().
+  // Create the global SensESPApp() object by first creating a
+  // SensESPAppBuilder object, then setting some hard-coded
+  // program attributes, and then calling get_app().
 
   // Create a builder object
   SensESPAppBuilder builder;
 
   sensesp_app = builder.set_hostname("your device name")
-                    ->set_sk_server("your server address", 80)
+                    ->set_sk_server("192.168.1.5", 80)
                     ->get_app();
 
   // The "Signal K path" identifies the output of this sensor to the Signal K
@@ -81,6 +78,18 @@ ReactESP app([]() {
   // To find valid Signal K Paths that fits your need you look at this link:
   // https://signalk.org/specification/1.4.0/doc/vesselsBranch.html
   const char* sk_path = "electrical.alternators.12V.temperature";
+
+  // If you are creating a new Signal K path that does not
+  // already exist in the specification, it is best to
+  // define "metadata" that describes your new value. This
+  // metadata will be reported to the server upon the first
+  // time your sensor reports its value(s) to the server
+  SKMetadata* metadata = new SKMetadata();
+  metadata->description_ = "Alternator Temperature";
+  metadata->display_name_ = "Alternator Temperature";
+  metadata->short_name_ = "Alt Temp";
+  metadata->units_ = "K";
+
 
   /*
   Connecting a physical temperature sender to the MCU involves using a "voltage
@@ -151,7 +160,7 @@ ReactESP app([]() {
       ->connect_to(new VoltageDividerR2(R1, Vin, "/12V_alternator/temp/sender"))
       ->connect_to(new TemperatureInterpreter("/12V_alternator/temp/curve"))
       ->connect_to(new Linear(1.0, 0.0, "/12V_alternator/temp/calibrate"))
-      ->connect_to(new SKOutputNumber(sk_path, "/12V_alternator/temp/sk"));
+      ->connect_to(new SKOutputNumber(sk_path, "/12V_alternator/temp/sk", metadata));
 
   // Start the SensESP application running, which simply activates everything
   // that's been set up above

@@ -9,37 +9,56 @@ MAX31856Thermocouple::MAX31856Thermocouple(int8_t cs_pin, int8_t mosi_pin,
                                            max31856_thermocoupletype_t tc_type,
                                            uint read_delay, String config_path)
     : NumericSensor(config_path),
-      data_ready_pin{drdy_pin},
-      read_delay{read_delay} {
-  load_configuration();
-  max31856 = new Adafruit_MAX31856(cs_pin, mosi_pin, miso_pin, clk_pin);
-  if (!max31856->begin()) {
-    while (1) delay(10);
+      data_ready_pin_{drdy_pin},
+      read_delay_{read_delay} {
+  load_configuration();      
+  max31856_ = new Adafruit_MAX31856(cs_pin, mosi_pin, miso_pin, clk_pin);
+  if (!max31856_->begin()) {
+    sensor_detected_ = false;
+    debugW("No MAX31856 detected: check wiring.");
+    return;
   }
-  max31856->setThermocoupleType(tc_type);
-  max31856->setConversionMode(MAX31856_CONTINUOUS);
+  max31856_->setThermocoupleType(tc_type);
+  max31856_->setConversionMode(MAX31856_ONESHOT_NOWAIT);
+}
+
+MAX31856Thermocouple::MAX31856Thermocouple(Adafruit_MAX31856* max31856,
+                                           uint read_delay, String config_path)
+    : NumericSensor(config_path),
+      max31856_{max31856},
+      read_delay_{read_delay} {
+  load_configuration();
+  max31856_->setConversionMode(MAX31856_ONESHOT_NOWAIT);
 }
 
 void MAX31856Thermocouple::enable() {
-  app.onRepeat(read_delay, [this]() {
-    while (digitalRead(data_ready_pin)) {
-      delay(25);
+  // Must be at least 500 to allow time for temperature "conversion".
+  if (!sensor_detected_) {
+    debugE("MAX31856 not enabled: no sensor detected.");
+    return;
+  }  
+  else {
+    if (read_delay_ < 500) {
+      read_delay_ = 500;
     }
-    float temp = max31856->readThermocoupleTemperature();
-    this->emit(temp);
-  });
+    app.onRepeat(read_delay_, [this]() {
+      max31856_->triggerOneShot();
+      app.onDelay(450, [this]() {
+        float temp = max31856_->readThermocoupleTemperature();
+        this->emit(temp);
+      });
+    });
+  } 
 }
 
 void MAX31856Thermocouple::get_configuration(JsonObject& root) {
-  root["read_delay"] = read_delay;
-  root["value"] = output;
+  root["read_delay"] = read_delay_;
 };
 
 static const char SCHEMA[] PROGMEM = R"###({
     "type": "object",
     "properties": {
-        "read_delay": { "title": "Read delay", "type": "number", "description": "Number of milliseconds between each thermocouple read " },
-        "value": { "title": "Last value", "type" : "number", "readOnly": true }
+        "read_delay": { "title": "Read delay", "type": "number", "description": "Number of milliseconds between each thermocouple read " }
     }
   })###";
 
@@ -52,6 +71,6 @@ bool MAX31856Thermocouple::set_configuration(const JsonObject& config) {
       return false;
     }
   }
-  read_delay = config["read_delay"];
+  read_delay_ = config["read_delay"];
   return true;
 }

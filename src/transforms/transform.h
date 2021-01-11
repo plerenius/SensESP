@@ -19,10 +19,13 @@
 // Transforms transform raw device readouts into useful sensor values.
 
 /**
- * The base class for all transforms. All transforms are can be subscribed
- * to by calling attach() (inherited from Observable). They can
- * have an optional persistence configuration by specifying an "id" to
- * save the configuration data in.
+ * @brief The base class for all transforms. A transforms takes a value
+ * in, transforms it in some way, and outputs the transformed value.
+ * 
+ * All transforms are subscribed
+ * to by calling attach() (inherited from Observable).
+ * 
+ * @param config_path The path to configure the Transform in the Config UI.
  */
 class TransformBase : public Configurable, public Enable {
  public:
@@ -31,14 +34,14 @@ class TransformBase : public Configurable, public Enable {
   // Primary purpose of this was to supply Signal K sources
   // (now handled by SKEmitter::get_sources). Should
   // this be deprecated?
-  static const std::set<TransformBase*>& get_transforms() { return transforms; }
+  static const std::set<TransformBase*>& get_transforms() { return transforms_; }
 
  private:
-  static std::set<TransformBase*> transforms;
+  static std::set<TransformBase*> transforms_;
 };
 
 /**
- * The main Transform class. A transform is identified primarily by the
+ * @brief The main Transform class. A transform is identified primarily by the
  * type of value that is produces (i.e. a Transform<float> is a
  * ValueProducer<float> that generates float values)
  */
@@ -53,17 +56,17 @@ class Transform : public TransformBase,
   /**
    * A convenience method that allows up to five producers to be
    * quickly connected to the input of the ValueConsumer side of this
-   * transform.  The first producer will be connected to input
+   * transform. The first producer will be connected to input
    * channel zero, the second one to input channel 1, etc.
    * "this" is returned, which allows the ValueProducer side
    * of this transform to then be wired to other transforms via
    * a call to connect_to().
    */
-  Transform<C, P>* connectFrom(ValueProducer<P>* producer0,
-                               ValueProducer<P>* producer1 = NULL,
-                               ValueProducer<P>* producer2 = NULL,
-                               ValueProducer<P>* producer3 = NULL,
-                               ValueProducer<P>* producer4 = NULL) {
+  Transform<C, P>* connect_from(ValueProducer<P>* producer0,
+                                ValueProducer<P>* producer1 = NULL,
+                                ValueProducer<P>* producer2 = NULL,
+                                ValueProducer<P>* producer3 = NULL,
+                                ValueProducer<P>* producer4 = NULL) {
     this->ValueConsumer<C>::connect_from(producer0);
     if (producer1 != NULL) {
       this->ValueConsumer<C>::connect_from(producer1, 1);
@@ -79,11 +82,21 @@ class Transform : public TransformBase,
     }
     return this;
   }
+
+  // deprecated! use connect_from instead
+  Transform<C, P>* connectFrom(ValueProducer<P>* producer0,
+                               ValueProducer<P>* producer1 = NULL,
+                               ValueProducer<P>* producer2 = NULL,
+                               ValueProducer<P>* producer3 = NULL,
+                               ValueProducer<P>* producer4 = NULL) {
+    return this->connect_from(producer0, producer1, producer2, producer3,
+                              producer4);
+  }
 };
 
 /**
- * A SymmetricTransform is a common type of transform that consumes, transforms,
- * then outputs values of the same data type.
+ * @brief A common type of transform that consumes,
+ * transforms, then outputs values of the same data type.
  */
 template <typename T>
 class SymmetricTransform : public Transform<T, T> {

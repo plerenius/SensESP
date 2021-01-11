@@ -4,15 +4,21 @@
 #include <ArduinoJson.h>
 
 #include "system/observable.h"
-#include "system/valueconsumer.h"
+#include "transforms/transform.h"
 
-class DigitalOutput : public BooleanConsumer {
+/**
+ * @brief Sets a GPIO pin to whatever the input is (true = HIGH,
+ * false = LOW), and passes the value on to the next ValueConsumer.
+ * 
+ * @param pin Pin number of the pin you want to output to.
+ */
+class DigitalOutput : public BooleanTransform {
  public:
   DigitalOutput(int pin);
   void set_input(bool new_value, uint8_t input_channel = 0) override;
 
  private:
-  int pin_number;
+  int pin_number_;
 };
 
 #endif

@@ -10,7 +10,7 @@
 #define PATTERN_END (-1)
 
 /**
- * A base class for LED blinker classes.
+ * @brief A base class for LED blinker classes.
  */
 class BaseBlinker : public Enable {
  public:
@@ -27,27 +27,27 @@ class BaseBlinker : public Enable {
   void enable() override;
 
  protected:
-  int pin;
-  bool enabled = true;
-  bool state = false;
-  int update_counter = 0;
-  Reaction* reaction = NULL;
+  int pin_;
+  bool enabled_ = true;
+  bool state_ = false;
+  int update_counter_ = 0;
+  Reaction* reaction_ = NULL;
 };
 
 /**
- * A base class for periodic blinkers.
+ * @brief A base class for periodic blinkers.
  */
 class PeriodicBlinker : public BaseBlinker {
  public:
   PeriodicBlinker(int pin, unsigned int period);
-  void set_period(unsigned int period) { this->period = period; }
+  void set_period(unsigned int period) { this->period_ = period; }
 
  protected:
-  unsigned int period;
+  unsigned int period_;
 };
 
 /**
- * EvenBlinker is a LED blinker class that blinks the LED 50% off, 50% on,
+ * @brief  An LED blinker class that blinks the LED 50% off, 50% on,
  * at a given period.
  */
 class EvenBlinker : public PeriodicBlinker {
@@ -57,21 +57,21 @@ class EvenBlinker : public PeriodicBlinker {
 };
 
 /**
- * RatioBlinker is a periodic blinker that defines both the on-ratio
+ * @brief A periodic blinker that defines both the on-ratio
  * and the period length.
  */
 class RatioBlinker : public PeriodicBlinker {
  public:
   RatioBlinker(int pin, unsigned int period, float ratio = 0.);
   void tick() override final;
-  void set_ratio(unsigned int ratio) { this->ratio = ratio; }
+  void set_ratio(unsigned int ratio) { this->ratio_ = ratio; }
 
  protected:
-  float ratio;
+  float ratio_;
 };
 
 /**
- * PatternBlinker is a blinker that blinks the LED according to a defined
+ * @brief A blinker that blinks the LED according to a defined
  * repeating pattern.
  */
 class PatternBlinker : public BaseBlinker {
@@ -82,8 +82,8 @@ class PatternBlinker : public BaseBlinker {
   void restart();
 
  protected:
-  int* pattern;
-  unsigned int pattern_ptr = 0;
+  int* pattern_;
+  unsigned int pattern_ptr_ = 0;
 };
 
 #endif

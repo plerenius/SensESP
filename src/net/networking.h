@@ -11,13 +11,16 @@
 #include "system/observablevalue.h"
 #include "system/valueproducer.h"
 
-enum WifiState {
+enum class WifiState {
   kWifiNoAP = 0,
   kWifiDisconnected,
   kWifiConnectedToAP,
-  kExecutingWifiManager
+  kWifiManagerActivated
 };
 
+/**
+ * @brief Manages the ESP's connection to the Wifi network. 
+ */
 class Networking : public Configurable, public ValueProducer<WifiState> {
  public:
   Networking(String config_path, String ssid, String password, String hostname);
@@ -26,7 +29,7 @@ class Networking : public Configurable, public ValueProducer<WifiState> {
   virtual void get_configuration(JsonObject& doc) override final;
   virtual bool set_configuration(const JsonObject& config) override final;
   virtual String get_config_schema() override;
-  
+
   void reset_settings();
 
  protected:
