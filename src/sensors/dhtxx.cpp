@@ -1,64 +1,68 @@
-#include "dhtxx.h"
+#include "sensors/dhtxx.h"
 
 #include "sensesp.h"
 #include <RemoteDebug.h>
 
 
 // DHTxx represents a DHT temperature & pressure sensor.
-DHTxx::DHTxx(uint8_t pin, uint8_t type, String config_path) :
-       Sensor(config_path) {
-    load_configuration();
-    pDHT = new DHT(pin, type);
-    pDHT->begin();
+DHTxx::DHTxx(uint8_t pin, uint8_t type, String config_path) {
+    pDHT_ = new DHT(pin, type);
+    pDHT_->begin();
 }
 
+// TODO(Petter L): implement check_status.
+void DHTxx::check_status() {
+  return;
+}
 
 // DHTvalue reads and outputs the specified type of value of a DHTxx sensor
-DHTvalue::DHTvalue(DHTxx* pDHTxx, DHTValType val_type, uint read_delay, String config_path) :
-                   NumericSensor(config_path), pDHTxx{pDHTxx}, val_type{val_type}, read_delay{read_delay} {
+DHTValue::DHTValue(DHTxx* pDHTxx, DHTValType val_type,
+                   uint read_delay, String config_path) :
+                   NumericSensor(config_path), pDHTxx_{pDHTxx},
+                   val_type_{val_type}, read_delay_{read_delay} {
       load_configuration();
 }
 
-// DHT outputs temp in Celsius. Need to convert to Kelvin before sending to Signal K.
-void DHTvalue::enable() {
-  app.onRepeat(read_delay, [this](){ 
-      if (val_type == temperature) {
-          output = pDHTxx->pDHT->readTemperature() + 273.15; // Kelvin is Celsius + 273.15
+// DHT outputs temp in Celsius. Need to convert to Kelvin
+// before sending to Signal K.
+void DHTValue::enable() {
+  app.onRepeat(read_delay_, [this](){
+      if (val_type_ == temperature) {
+        // Kelvin is Celsius + 273.15
+        output = pDHTxx_->pDHT_->readTemperature() + 273.15;
+      } else if (val_type_ == humidity) {
+        output = pDHTxx_->pDHT_->readHumidity();
+      } else {
+        output = 0.0;
       }
-      else if (val_type == humidity) {
-          output = pDHTxx->pDHT->readHumidity();
-      }
-      else output = 0.0;
-      
+
       notify();
   });
 }
 
-_VOID DHTvalue::get_configuration(JsonObject& root) {
-  root["read_delay"] = read_delay;
-  root["value"] = output;
-};
+_VOID DHTValue::get_configuration(JsonObject& root) {
+  root["read_delay"] = read_delay_;
+}
 
 static const char SCHEMA[] PROGMEM = R"###({
   "type": "object",
   "properties": {
-      "read_delay": { "title": "Read delay", "type": "number", "description": "The time, in milliseconds, between each read of the input" },
-      "value": { "title": "Last value", "type" : "number", "readOnly": true }
+      "read_delay": { "title": "Read delay", "type": "number", "description": "The time, in milliseconds, between each read of the input" }
   }
 })###";
 
 
-String DHTvalue::get_config_schema() {
+String DHTValue::get_config_schema() {
   return FPSTR(SCHEMA);
 }
 
-bool DHTvalue::set_configuration(const JsonObject& config) {
+bool DHTValue::set_configuration(const JsonObject& config) {
   String expected[] = {"read_delay"};
   for (auto str : expected) {
     if (!config.containsKey(str)) {
       return false;
     }
   }
-  read_delay = config["read_delay"];
+  read_delay_ = config["read_delay"];
   return true;
 }
